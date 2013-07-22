@@ -63,6 +63,13 @@ ELSE (WIN32)
 
   SET(CMAKE_C_FLAGS_DEBUG "-DDEBUG -g")
   SET(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O2 -Wuninitialized")
+
+  IF (APPLE)
+    OPTION(BUILD_32_64_FAT_BINARIES "If selected, built binaries will contain both 32 and 64 bits versions.")
+    IF (BUILD_32_64_FAT_BINARIES)
+      SET(CMAKE_OSX_ARCHITECTURES "i386;x86_64")
+    ENDIF()
+  ENDIF()
 ENDIF (WIN32)
 
 ADD_SUBDIRECTORY(src)
