@@ -1,3 +1,3 @@
 .DS_Store
-Makefile
-/build/
+install
+build/ios

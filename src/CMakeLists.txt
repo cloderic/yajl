@@ -38,20 +38,22 @@ SET(LIBRARY_OUTPUT_PATH ${libDir})
 
 ADD_LIBRARY(yajl_s STATIC ${SRCS} ${HDRS} ${PUB_HDRS})
 
-ADD_LIBRARY(yajl SHARED ${SRCS} ${HDRS} ${PUB_HDRS})
+IF(NOT IOS) # iOS doens't support dynamic libraries
+  ADD_LIBRARY(yajl SHARED ${SRCS} ${HDRS} ${PUB_HDRS})
 
-#### setup shared library version number
-SET_TARGET_PROPERTIES(yajl PROPERTIES
-                      DEFINE_SYMBOL YAJL_SHARED
-                      SOVERSION ${YAJL_MAJOR}
-                      VERSION ${YAJL_MAJOR}.${YAJL_MINOR}.${YAJL_MICRO})
-
-#### ensure a .dylib has correct absolute installation paths upon installation
-IF(APPLE)
-  MESSAGE("INSTALL_NAME_DIR: ${CMAKE_INSTALL_PREFIX}/lib")
+  #### setup shared library version number
   SET_TARGET_PROPERTIES(yajl PROPERTIES
+                        DEFINE_SYMBOL YAJL_SHARED
+                        SOVERSION ${YAJL_MAJOR}
+                        VERSION ${YAJL_MAJOR}.${YAJL_MINOR}.${YAJL_MICRO})
+
+  #### ensure a .dylib has correct absolute installation paths upon installation
+  IF(APPLE)
+    MESSAGE("INSTALL_NAME_DIR: ${CMAKE_INSTALL_PREFIX}/lib")
+    SET_TARGET_PROPERTIES(yajl PROPERTIES
                         INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
-ENDIF(APPLE)
+  ENDIF(APPLE)
+ENDIF()
 
 #### build up an sdk as a post build step
 
@@ -76,18 +78,23 @@ ENDFOREACH (header ${PUB_HDRS})
 
 INCLUDE_DIRECTORIES(${incDir}/..)
 
-#### installation
 # at build time you may specify the cmake variable LIB_SUFFIX to handle
 # 64-bit systems which use 'lib64'
-
-INSTALL(TARGETS yajl
-  EXPORT "YajlTargets${LIB_SUFFIX}"
-  RUNTIME DESTINATION bin${LIB_SUFFIX}
-  LIBRARY DESTINATION lib${LIB_SUFFIX}
-  ARCHIVE DESTINATION lib${LIB_SUFFIX})
 INSTALL(TARGETS yajl_s
   EXPORT "YajlTargets${LIB_SUFFIX}"
+  LIBRARY DESTINATION lib${LIB_SUFFIX}
   ARCHIVE DESTINATION lib${LIB_SUFFIX})
+
+IF (NOT IOS)
+  INSTALL(TARGETS yajl
+    EXPORT "YajlTargets${LIB_SUFFIX}"
+    RUNTIME DESTINATION bin${LIB_SUFFIX}
+    LIBRARY DESTINATION lib${LIB_SUFFIX}
+    ARCHIVE DESTINATION lib${LIB_SUFFIX})
+ENDIF()
+
+INSTALL(EXPORT "YajlTargets${LIB_SUFFIX}" DESTINATION cmake/)
+
 
 INSTALL(FILES ${PUB_HDRS} DESTINATION include/yajl)
 INSTALL(FILES ${incDir}/yajl_version.h DESTINATION include/yajl)
@@ -98,4 +105,3 @@ ENDIF()
 
 CONFIGURE_FILE(YajlConfig.cmake.in "${cmakeOutDir}/YajlConfig.cmake" @ONLY)
 INSTALL(FILES "${cmakeOutDir}/YajlConfig.cmake" DESTINATION cmake/)
-INSTALL(EXPORT "YajlTargets${LIB_SUFFIX}" DESTINATION cmake/)

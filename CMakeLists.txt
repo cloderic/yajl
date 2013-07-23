@@ -49,7 +49,7 @@ IF (WIN32)
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4996 /wd4255 /wd4130 /wd4100 /wd4711")
   SET(CMAKE_C_FLAGS_DEBUG "/D DEBUG /Od /Z7")
   SET(CMAKE_C_FLAGS_RELEASE "/D NDEBUG /O2")
-ELSE (WIN32)
+ELSE()
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
   IF(CMAKE_COMPILER_IS_GNUCC)
     INCLUDE(CheckCCompilerFlag)
@@ -65,22 +65,34 @@ ELSE (WIN32)
   SET(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O2 -Wuninitialized")
 
   IF (APPLE)
-    OPTION(BUILD_32_64_FAT_BINARIES "If selected, built binaries will contain both 32 and 64 bits versions.")
+    INCLUDE(build/ios.cmake) # include the ios enabling scripts
+
+    INCLUDE(CMakeDependentOption)
+    CMAKE_DEPENDENT_OPTION(BUILD_32_64_FAT_BINARIES "Building binaries containing both 32 and 64 bits versions." 
+      ON "NOT IOS" 
+      OFF)
+
     IF (BUILD_32_64_FAT_BINARIES)
       SET(CMAKE_OSX_ARCHITECTURES "i386;x86_64")
     ENDIF()
+  
+    IF (IOS)
+      SET(LIB_SUFFIX "-${IOS_PLATFORM}")
+    ENDIF()
   ENDIF()
-ENDIF (WIN32)
+ENDIF()
 
 ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(reformatter)
-ADD_SUBDIRECTORY(verify)
-ADD_SUBDIRECTORY(example)
-ADD_SUBDIRECTORY(doc)
+IF(NOT IOS) # Not building the test application on IOS
+  ADD_SUBDIRECTORY(reformatter)
+  ADD_SUBDIRECTORY(verify)
+  ADD_SUBDIRECTORY(example)
+  ADD_SUBDIRECTORY(doc)
 
-ENABLE_TESTING()
-ADD_SUBDIRECTORY(test)
-ADD_SUBDIRECTORY(perf)
+  ENABLE_TESTING()
+  ADD_SUBDIRECTORY(test)
+  ADD_SUBDIRECTORY(perf)
+ENDIF()
 
 # CPack configuration, builds a zip package
 SET(CPACK_GENERATOR "TGZ")
